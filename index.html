@@ -9,11 +9,9 @@
             font-family: Arial, sans-serif;
             margin: 20px;
         }
-
         h1 {
             color: #333;
         }
-
         #messages {
             border: 1px solid #ddd;
             padding: 10px;
@@ -21,14 +19,12 @@
             overflow-y: auto;
             background-color: #f9f9f9;
         }
-
         .message {
             margin: 5px 0;
             padding: 8px;
             background-color: #eef;
             border-radius: 5px;
         }
-
         .topic {
             font-weight: bold;
             color: #0056b3;
@@ -44,7 +40,7 @@
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script>
         // Configurações MQTT
-        const brokerUrl = 'ws://broker.emqx.io:8083/mqtt'; // Broker via WebSocket
+        const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; // Broker via WebSocket Secure
         const client = mqtt.connect(brokerUrl, { clientId: `mqtt_${Math.random().toString(16).slice(3)}` });
 
         // Assinar em múltiplos tópicos
