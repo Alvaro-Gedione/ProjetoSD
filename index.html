@@ -40,7 +40,7 @@
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script>
         // Configurações MQTT
-        const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; // Broker via WebSocket Secure
+        const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; // Broker via WebSocket Secure (WSS)
         const client = mqtt.connect(brokerUrl, { clientId: `mqtt_${Math.random().toString(16).slice(3)}` });
 
         // Assinar em múltiplos tópicos
