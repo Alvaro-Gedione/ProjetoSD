@@ -45,17 +45,21 @@
             width: 100% !important; /* Ajusta a largura do canvas para 100% */
             height: auto !important; /* Ajusta a altura do canvas automaticamente */
         }
-    
-        /* Aumentar o tamanho das fatias dos gráficos de umidade e temperatura */
+
+        /* Estilos específicos para os gauges */
         #gaugeTemperature, #gaugeHumidity {
             max-width: 300px; /* Aumenta a largura máxima */
             max-height: 300px; /* Aumenta a altura máxima */
         }
 
+        /* Estilo para o gráfico de linhas */
+        #lineChartContainer {
+            margin-top: 20px;
+        }
+
         #lineChart {
             width: 100%;
-            height: 800px; /* Mantém a altura do gráfico de linhas */
-            margin-top: 20px; /* Adiciona espaço acima do gráfico de linhas */
+            height: 500px; /* Define uma altura consistente para o gráfico */
         }
     </style>
 </head>
@@ -74,10 +78,11 @@
             <h2>Média da Umidade</h2>
             <canvas id="gaugeHumidity"></canvas>
         </div>
-        <div>
-            <h2>Gráfico de Pontos</h2>
-            <canvas id="lineChart"></canvas>
-        </div>
+    </div>
+
+    <div id="lineChartContainer">
+        <h2>Gráfico de Pontos</h2>
+        <canvas id="lineChart"></canvas>
     </div>
 
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
