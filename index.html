@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT Message Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #messages {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            background-color: #eef;
+            border-radius: 5px;
+        }
+
+        .topic {
+            font-weight: bold;
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>MQTT Message Viewer</h1>
+    <div id="messages">
+        <p>No messages yet...</p>
+    </div>
+
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script>
+        // Configurações MQTT
+        const brokerUrl = 'ws://broker.emqx.io:8083/mqtt'; // Broker via WebSocket
+        const client = mqtt.connect(brokerUrl, { clientId: `mqtt_${Math.random().toString(16).slice(3)}` });
+
+        // Assinar em múltiplos tópicos
+        const topics = ['home/temperature', 'home/humidity']; // Lista de tópicos
+        const messagesDiv = document.getElementById('messages');
+
+        // Quando conectado
+        client.on('connect', () => {
+            console.log('Conectado ao broker MQTT');
+            topics.forEach(topic => {
+                client.subscribe(topic, (err) => {
+                    if (err) {
+                        console.error(`Erro ao se inscrever no tópico ${topic}:`, err);
+                    } else {
+                        console.log(`Inscrito no tópico: ${topic}`);
+                    }
+                });
+            });
+        });
+
+        // Receber mensagens
+        client.on('message', (topic, payload) => {
+            const message = payload.toString();
+            console.log(`Recebido [${topic}]: ${message}`);
+
+            // Adicionar a mensagem ao HTML
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            messageElement.innerHTML = `<span class="topic">${topic}:</span> ${message}`;
+            messagesDiv.appendChild(messageElement);
+
+            // Rolagem automática para novas mensagens
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+
+        // Log de erros
+        client.on('error', (err) => {
+            console.error('Erro no cliente MQTT:', err);
+        });
+    </script>
+</body>
+</html>
