@@ -9,9 +9,11 @@
             font-family: Arial, sans-serif;
             margin: 20px;
         }
+
         h1 {
             color: #333;
         }
+
         #messages {
             border: 1px solid #ddd;
             padding: 10px;
@@ -19,15 +21,41 @@
             overflow-y: auto;
             background-color: #f9f9f9;
         }
+
         .message {
             margin: 5px 0;
             padding: 8px;
             background-color: #eef;
             border-radius: 5px;
         }
+
         .topic {
             font-weight: bold;
             color: #0056b3;
+        }
+
+        #dashboard {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            flex-wrap: wrap; /* Permite que os itens se movam para a próxima linha */
+        }
+
+        canvas {
+            width: 100% !important; /* Ajusta a largura do canvas para 100% */
+            height: auto !important; /* Ajusta a altura do canvas automaticamente */
+        }
+    
+        /* Aumentar o tamanho das fatias dos gráficos de umidade e temperatura */
+        #gaugeTemperature, #gaugeHumidity {
+            max-width: 300px; /* Aumenta a largura máxima */
+            max-height: 300px; /* Aumenta a altura máxima */
+        }
+
+        #lineChart {
+            width: 100%;
+            height: 800px; /* Mantém a altura do gráfico de linhas */
+            margin-top: 20px; /* Adiciona espaço acima do gráfico de linhas */
         }
     </style>
 </head>
@@ -37,15 +65,144 @@
         <p>No messages yet...</p>
     </div>
 
+    <div id="dashboard">
+        <div>
+            <h2>Média da Temperatura</h2>
+            <canvas id="gaugeTemperature"></canvas>
+        </div>
+        <div>
+            <h2>Média da Umidade</h2>
+            <canvas id="gaugeHumidity"></canvas>
+        </div>
+        <div>
+            <h2>Gráfico de Pontos</h2>
+            <canvas id="lineChart"></canvas>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Configurações MQTT
-        const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; // Broker via WebSocket Secure (WSS)
+        const brokerUrl = 'wss://broker.emqx.io:8084/mqtt'; // Broker via WebSocket Secure
         const client = mqtt.connect(brokerUrl, { clientId: `mqtt_${Math.random().toString(16).slice(3)}` });
 
         // Assinar em múltiplos tópicos
         const topics = ['home/temperature', 'home/humidity']; // Lista de tópicos
         const messagesDiv = document.getElementById('messages');
+
+        // Variáveis para calcular médias
+        let sumTemperature = 0;
+        let countTemperature = 0;
+        let sumHumidity = 0;
+        let countHumidity = 0;
+
+        // Configuração dos gráficos
+        const gaugeTemperature = new Chart(document.getElementById('gaugeTemperature'), {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [0, 100],
+                    backgroundColor: ['#ff6384', '#e0e0e0'],
+                    borderColor: '#fff',
+                    borderWidth: 4 // Aumenta a largura da borda
+                }]
+            },
+            options: {
+                rotation: 77.5 * Math.PI,
+                circumference: 75 * Math.PI, //aumentar o multiplo para aumentar o tamanho da fatia
+                cutoutPercentage: 60, // Aumenta o corte para aumentar a fatia
+                tooltips: { enabled: false },
+                hover: { mode: null },
+                plugins: {
+                    datalabels: {
+                        display: true,
+                        color: '#000',
+                        formatter: (value) => {
+                            return value.toFixed(2) + '°C';
+                        }
+                    }
+                }
+            }
+        });
+        
+        const gaugeHumidity = new Chart(document.getElementById('gaugeHumidity'), {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [0, 100],
+                    backgroundColor: ['#36a2eb', '#e0e0e0'],
+                    borderColor: '#fff',
+                    borderWidth: 4 // Aumenta a largura da borda
+                }]
+            },
+            options: {
+                rotation: 77.5 * Math.PI,
+                circumference: 75 * Math.PI, //aumentar o multiplo para aumentar o tamanho da fatia
+                cutoutPercentage: 60, // Aumenta o corte para aumentar a fatia
+                tooltips: { enabled: false },
+                hover: { mode: null },
+                plugins: {
+                    datalabels: {
+                        display: true,
+                        color: '#000',
+                        formatter: (value) => {
+                            return value.toFixed(2) + '%';
+                        }
+                    }
+                }
+            }
+        });
+
+        const lineChart = new Chart(document.getElementById('lineChart'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Temperatura',
+                        data: [],
+                        borderColor: '#ff6384',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)', // Preenchimento
+                        borderWidth: 2, // Largura da linha
+                        pointBackgroundColor: '#ff6384', // Cor dos pontos
+                        pointRadius: 5 // Tamanho dos pontos
+                    },
+                    {
+                        label: 'Umidade',
+                        data: [],
+                        borderColor: '#36a2eb',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)', // Preenchimento
+                        borderWidth: 2, // Largura da linha
+                        pointBackgroundColor: '#36a2eb', // Cor dos pontos
+                        pointRadius: 5 // Tamanho dos pontos
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    xAxes: [{
+                        type: 'time',
+                        time: {
+                            unit: 'second'
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Tempo'
+                        }
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Valor'
+                        }
+                    }]
+                }
+            }
+        });
 
         // Quando conectado
         client.on('connect', () => {
@@ -65,6 +222,33 @@
         client.on('message', (topic, payload) => {
             const message = payload.toString();
             console.log(`Recebido [${topic}]: ${message}`);
+
+            const value = parseFloat(message);
+            const now = new Date();
+
+            if (topic === 'home/temperature') {
+                sumTemperature += value;
+                countTemperature++;
+                const avgTemperature = (sumTemperature / countTemperature).toFixed(2);
+
+                gaugeTemperature.data.datasets[0].data[0] = avgTemperature;
+                gaugeTemperature.update();
+
+                lineChart.data.labels.push(now);
+                lineChart.data.datasets[0].data.push({ x: now, y: value });
+                lineChart.update();
+            } else if (topic === 'home/humidity') {
+                sumHumidity += value;
+                countHumidity++;
+                const avgHumidity = (sumHumidity / countHumidity).toFixed(2);
+
+                gaugeHumidity.data.datasets[0].data[0] = avgHumidity;
+                gaugeHumidity.update();
+
+                lineChart.data.labels.push(now);
+                lineChart.data.datasets[1].data.push({ x: now, y: value });
+                lineChart.update();
+            }
 
             // Adicionar a mensagem ao HTML
             const messageElement = document.createElement('div');
