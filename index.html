@@ -84,7 +84,17 @@
         <h2>Gráfico de Pontos</h2>
         <canvas id="lineChart"></canvas>
     </div>
-
+    <!-- Formulário para publicação -->
+    <div>
+        <h2>Enviar Mensagem</h2>
+        <form id="publishForm">
+            <label for="category">Categoria:</label>
+            <input type="text" id="category" placeholder="Ex: Iluminação" required>
+            <label for="value">Valor:</label>
+            <input type="text" id="value" placeholder="Ex: 75" required>
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -102,6 +112,42 @@
         let sumHumidity = 0;
         let countHumidity = 0;
 
+        // Conectar e se inscrever no tópico de mensagens do chat
+        client.on('connect', () => {
+            console.log('Conectado ao broker MQTT');
+            client.subscribe('home/chat', (err) => {
+                if (err) {
+                    console.error('Erro ao se inscrever no tópico home/chat:', err);
+                } else {
+                    console.log('Inscrito no tópico: home/chat');
+                }
+            });
+        });
+
+        // Receber mensagens do chat
+        client.on('message', (topic, payload) => {
+            if (topic === 'home/chat') {
+                const message = payload.toString();
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message');
+                messageElement.innerHTML = `<span class="topic">${topic}:</span> ${message}`;
+                messagesDiv.appendChild(messageElement);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight; // Scroll para novas mensagens
+            }
+        });
+
+        // Publicar mensagens ao enviar o formulário
+        document.getElementById('publishForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const category = document.getElementById('category').value.trim();
+            const value = document.getElementById('value').value.trim();
+            if (category && value) {
+                const message = `Categoria: ${category}, Valor: ${value}`;
+                client.publish('home/chat', message);
+                console.log(`Publicado: ${message}`);
+            }
+        });
+        
         // Configuração dos gráficos
         const gaugeTemperature = new Chart(document.getElementById('gaugeTemperature'), {
             type: 'doughnut',
