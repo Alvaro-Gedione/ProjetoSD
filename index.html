@@ -184,7 +184,7 @@
         <div style="width: 30px; height: 3px; background-color: #333; margin: 5px;"></div>
     </div>
     <div id="motionIndicator" style="position: absolute; top: 20px; left: 20px; cursor: pointer;">
-        <img id="lampImage" src="Lampada.png" alt="Lâmpada" title="Movimento Detectado" style="width: 40px; height: auto; margin-left: 5px;" />
+        <img id="lampImage" src="lampada.png" alt="Lâmpada" title="Movimento Detectado" style="width: 40px; height: auto; margin-left: 5px;" />
     </div>
     <!-- Formulário de Publicação -->
     <div id="formContainer">
@@ -421,10 +421,10 @@
                 // Verifica se a mensagem indica movimento
                 const lampImage = document.getElementById('lampImage');
                 if (message === 'true') {
-                    lampImage.src = '/lampada(1).png'; // Lâmpada acesa
+                    lampImage.src = 'lampada(1).png'; // Lâmpada acesa
                     document.getElementById('motionIndicator').style.display = 'block'; // Mostra a lâmpada
                 } else {
-                    lampImage.src = '/lampada.png'; // Lâmpada apagada
+                    lampImage.src = 'lampada.png'; // Lâmpada apagada
                     document.getElementById('motionIndicator').style.display = 'block'; // Mostra a lâmpada
                 }
             } else if (topic === 'api/temperature') {
