@@ -421,10 +421,10 @@
                 // Verifica se a mensagem indica movimento
                 const lampImage = document.getElementById('lampImage');
                 if (message === 'true') {
-                    lampImage.src = 'Lampada (1).png'; // Lâmpada acesa
+                    lampImage.src = '/lampada(1).png'; // Lâmpada acesa
                     document.getElementById('motionIndicator').style.display = 'block'; // Mostra a lâmpada
                 } else {
-                    lampImage.src = 'Lampada.png'; // Lâmpada apagada
+                    lampImage.src = '/lampada.png'; // Lâmpada apagada
                     document.getElementById('motionIndicator').style.display = 'block'; // Mostra a lâmpada
                 }
             } else if (topic === 'api/temperature') {
