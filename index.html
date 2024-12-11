@@ -3,15 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MQTT Message Viewer</title>
+    <title>Distributed Systems - MQTT Dashboard</title>
     <style>
+        
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+            background-color: #f0f4f8;
+            color: #333;
         }
 
         h1 {
-            color: #333;
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 20px;
         }
 
         #messages {
@@ -19,7 +24,41 @@
             padding: 10px;
             height: 300px;
             overflow-y: auto;
-            background-color: #f9f9f9;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            background-color: #eef;
+            border-radius: 5px;
+        }
+
+        #gaugeContainer {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .gauge {
+            max-width: 250px;
+            max-height: 250px;
+            margin: 10px;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .sky-icon {
+            width: 50px;
+            height: 50px;
         }
 
         .message {
@@ -61,14 +100,62 @@
             width: 100%;
             height: 500px; /* Define uma altura consistente para o gráfico */
         }
+        /* Estilos do menu */
+        #menu {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+        }
+
+        #menu div {
+            width: 30px;
+            height: 3px;
+            background-color: #333;
+            margin: 5px;
+        }
+
+        #formContainer {
+            display: none; /* Oculta o formulário inicialmente */
+            position: absolute;
+            top: 60px; /* Ajusta a posição do menu */
+            right: 20px;
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000; /* Garante que o menu fique acima de outros elementos */
+        }
+
+        #formContainer h2 {
+            margin: 0 0 10px 0;
+        }
+
+        h1 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #formContainer label {
+            display: block; /* Faz os rótulos ficarem em linha vertical */
+            margin: 5px 0;
+        }
+        .centered-title {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h1>MQTT Message Viewer</h1>
+    <h1>Distributed Systems - MQTT Dashboard</h1>
     <div id="messages">
         <p>No messages yet...</p>
     </div>
-
     <div id="dashboard">
         <div>
             <h2>Média da Temperatura</h2>
@@ -78,21 +165,38 @@
             <h2>Média da Umidade</h2>
             <canvas id="gaugeHumidity"></canvas>
         </div>
+        <div id="weatherStatus">
+            <h2>Situação do Tempo de Itajubá:</h2>
+            <p id="temperatureStatus"></p>
+            <p id="humidityStatus"></p>
+            <p id="skyConditionStatus"></p>
+        </div>
     </div>
 
     <div id="lineChartContainer">
-        <h2>Gráfico de Pontos</h2>
+        <h2 class="centered-title">Sensores de Umidade e Temperatura</h2>
         <canvas id="lineChart"></canvas>
     </div>
-    <!-- Formulário para publicação -->
-    <div>
-        <h2>Enviar Mensagem</h2>
+    <!-- Menu de Três Riscos -->
+    <div id="menu" style="position: absolute; top: 20px; right: 20px; cursor: pointer;">
+        <div style="width: 30px; height: 3px; background-color: #333; margin: 5px;"></div>
+        <div style="width: 30px; height: 3px; background-color: #333; margin: 5px;"></div>
+        <div style="width: 30px; height: 3px; background-color: #333; margin: 5px;"></div>
+    </div>
+    <div id="motionIndicator" style="position: absolute; top: 20px; left: 20px; cursor: pointer;">
+        <img id="lampImage" src="Lampada.png" alt="Lâmpada" title="Movimento Detectado" style="width: 40px; height: auto; margin-left: 5px;" />
+    </div>
+    <!-- Formulário de Publicação -->
+    <div id="formContainer">
+        <h2>Publicar Mensagem</h2>
         <form id="publishForm">
             <label for="category">Categoria:</label>
-            <input type="text" id="category" placeholder="Ex: Iluminação" required>
-            <label for="value">Valor:</label>
-            <input type="text" id="value" placeholder="Ex: 75" required>
-            <button type="submit">Enviar</button>
+            <select id="category" name="category" required>
+                <option value="Situação da Cidade">Situação da Cidade</option>
+                <option value="Situação da Casa">Situação da Casa</option>
+                <option value="Situação da Plantas">Situação das Plantas</option>
+            </select>
+            <button type="submit">Publicar</button>
         </form>
     </div>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -103,7 +207,7 @@
         const client = mqtt.connect(brokerUrl, { clientId: `mqtt_${Math.random().toString(16).slice(3)}` });
 
         // Assinar em múltiplos tópicos
-        const topics = ['home/temperature', 'home/humidity']; // Lista de tópicos
+        const topics = ['home/temperature', 'home/humidity', 'home/motion', 'api/temperature', 'api/humidity', 'api/skyCondition']; // Lista de tópicos
         const messagesDiv = document.getElementById('messages');
 
         // Variáveis para calcular médias
@@ -140,9 +244,8 @@
         document.getElementById('publishForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const category = document.getElementById('category').value.trim();
-            const value = document.getElementById('value').value.trim();
-            if (category && value) {
-                const message = `Categoria: ${category}, Valor: ${value}`;
+            if (category) {
+                const message = `Categoria: ${category}`;
                 client.publish('home/chat', message);
                 console.log(`Publicado: ${message}`);
             }
@@ -204,53 +307,69 @@
                 }
             }
         });
-
         const lineChart = new Chart(document.getElementById('lineChart'), {
             type: 'line',
             data: {
-                labels: [],
+                labels: [], // Aqui você deve adicionar os rótulos formatados
                 datasets: [
                     {
-                        label: 'Temperatura',
+                        label: 'Temperatura (°C)',
                         data: [],
                         borderColor: '#ff6384',
                         backgroundColor: 'rgba(255, 99, 132, 0.2)', // Preenchimento
                         borderWidth: 2, // Largura da linha
+                        tension: 0.4, // Curvatura da linha
                         pointBackgroundColor: '#ff6384', // Cor dos pontos
                         pointRadius: 5 // Tamanho dos pontos
                     },
                     {
-                        label: 'Umidade',
+                        label: 'Umidade (%)',
                         data: [],
                         borderColor: '#36a2eb',
                         backgroundColor: 'rgba(54, 162, 235, 0.2)', // Preenchimento
                         borderWidth: 2, // Largura da linha
+                        tension: 0.4, // Curvatura da linha
                         pointBackgroundColor: '#36a2eb', // Cor dos pontos
                         pointRadius: 5 // Tamanho dos pontos
                     }
                 ]
             },
             options: {
+                responsive: true, // Gráfico responsivo
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top' // Posição da legenda
+                    },
+                    tooltip: {
+                        enabled: true // Exibe tooltips ao passar o mouse
+                    }
+                },
                 scales: {
-                    xAxes: [{
-                        type: 'time',
-                        time: {
-                            unit: 'second'
-                        },
-                        scaleLabel: {
+                    x: {
+                        title: {
                             display: true,
-                            labelString: 'Tempo'
-                        }
-                    }],
-                    yAxes: [{
+                            text: 'Momento (hh:mm:ss)',
+                            font: { size: 14 },
+                        },
                         ticks: {
-                            beginAtZero: true
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Valor'
+                            callback: function() {
+                                // Aqui você deve formatar o valor para HH:mm
+                                const date = new Date();
+                                const hours = String(date.getHours()).padStart(2, '0');
+                                const minutes = String(date.getMinutes()).padStart(2, '0');
+                                const seconds = String(date.getSeconds()).padStart(2, '0');
+                                return `${hours}:${minutes}:${seconds}`;
+                            }
                         }
-                    }]
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Valor',
+                            font: { size: 14 }
+                        },
+                    }
                 }
             }
         });
@@ -268,7 +387,6 @@
                 });
             });
         });
-
         // Receber mensagens
         client.on('message', (topic, payload) => {
             const message = payload.toString();
@@ -299,6 +417,28 @@
                 lineChart.data.labels.push(now);
                 lineChart.data.datasets[1].data.push({ x: now, y: value });
                 lineChart.update();
+            } else if (topic === 'home/motion') {
+                // Verifica se a mensagem indica movimento
+                const lampImage = document.getElementById('lampImage');
+                if (message === 'true') {
+                    lampImage.src = 'Lampada (1).png'; // Lâmpada acesa
+                    document.getElementById('motionIndicator').style.display = 'block'; // Mostra a lâmpada
+                } else {
+                    lampImage.src = 'Lampada.png'; // Lâmpada apagada
+                    document.getElementById('motionIndicator').style.display = 'block'; // Mostra a lâmpada
+                }
+            } else if (topic === 'api/temperature') {
+                // Atualiza a situação do tempo com a temperatura recebida
+                document.getElementById('temperatureStatus').innerText = `Temperatura: ${value}°C`;
+            } else if (topic === 'api/humidity') {
+                // Atualiza a situação do tempo com a umidade recebida
+                document.getElementById('humidityStatus').innerText = `Umidade: ${value}%`;
+            } else if (topic === 'api/skyCondition') {
+                // Atualiza a condição do céu
+                document.getElementById('skyConditionStatus').innerText = `Condição do Céu: ${message}`;
+            } else if (topic === 'api/precipitation') {
+                // Aqui você pode adicionar lógica para lidar com a precipitação, se necessário
+                console.log(`Precipitação: ${message}`);
             }
 
             // Adicionar a mensagem ao HTML
@@ -314,6 +454,11 @@
         // Log de erros
         client.on('error', (err) => {
             console.error('Erro no cliente MQTT:', err);
+        });
+        // Adicionar evento de clique ao menu
+        document.getElementById('menu').addEventListener('click', () => {
+            const formContainer = document.getElementById('formContainer');
+            formContainer.style.display = formContainer.style.display === 'none' ? 'block' : 'none';
         });
     </script>
 </body>
